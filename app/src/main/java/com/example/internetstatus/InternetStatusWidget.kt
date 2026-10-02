@@ -6,12 +6,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
-import androidx.glance.background
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.provideContent
+import androidx.glance.background
 import androidx.glance.color.ColorProvider
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
@@ -19,7 +19,6 @@ import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
-import androidx.glance.layout.width
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
@@ -34,7 +33,6 @@ class InternetStatusWidget : GlanceAppWidget() {
         context: Context,
         id: GlanceId
     ) {
-
         val repository =
             StatusRepository(
                 context.applicationContext
@@ -44,7 +42,6 @@ class InternetStatusWidget : GlanceAppWidget() {
             repository.status.first()
 
         provideContent {
-
             WidgetContent(
                 savedStatus = savedStatus
             )
@@ -56,7 +53,6 @@ class InternetStatusWidget : GlanceAppWidget() {
 private fun WidgetContent(
     savedStatus: SavedNetworkStatus
 ) {
-
     val status =
         savedStatus.mobileStatus
 
@@ -124,84 +120,34 @@ private fun WidgetContent(
             )
 
         } else {
-
             "—"
         }
 
     Column(
         modifier = GlanceModifier
             .fillMaxWidth()
-            .padding(12.dp)
+            .padding(10.dp)
     ) {
 
+        // Верхняя строка: название + обновление
         Row(
             modifier = GlanceModifier.fillMaxWidth()
         ) {
 
             Text(
-                text = "●",
+                text = "Мобильная сеть",
+                modifier = GlanceModifier.defaultWeight(),
+                maxLines = 1,
                 style = TextStyle(
-                    color = ColorProvider(
-                        day = statusColor,
-                        night = statusColor
-                    ),
                     fontWeight = FontWeight.Bold
                 )
             )
-
-            Spacer(
-                modifier = GlanceModifier.width(8.dp)
-            )
-
-            Column(
-                modifier = GlanceModifier
-                    .defaultWeight()
-            ) {
-
-                Text(
-                    text = "Мобильная сеть",
-                    style = TextStyle(
-                        fontWeight = FontWeight.Bold
-                    )
-                )
-
-                Spacer(
-                    modifier = GlanceModifier.size(2.dp)
-                )
-
-                androidx.glance.layout.Box(
-                    modifier = GlanceModifier
-                        .background(
-                            ColorProvider(
-                                day = statusColor,
-                                night = statusColor
-                            )
-                        )
-                        .padding(
-                            horizontal = 8.dp,
-                            vertical = 4.dp
-                        )
-                ) {
-                    Text(
-                        text = shortStatus,
-                        style = TextStyle(
-                            color = ColorProvider(
-                                day = Color.White,
-                                night = Color.White
-                            ),
-                            fontWeight = FontWeight.Bold
-                        )
-                    )
-                }
-            }
 
             Text(
                 text = "↻",
                 modifier = GlanceModifier
                     .clickable(
-                        actionRunCallback<
-                                RefreshWidgetAction
-                                >()
+                        actionRunCallback<RefreshWidgetAction>()
                     ),
                 style = TextStyle(
                     fontWeight = FontWeight.Bold
@@ -210,11 +156,43 @@ private fun WidgetContent(
         }
 
         Spacer(
-            modifier = GlanceModifier.size(6.dp)
+            modifier = GlanceModifier.size(5.dp)
+        )
+
+        // Цветная плашка статуса
+        Row {
+
+            Text(
+                text = shortStatus,
+                maxLines = 1,
+                modifier = GlanceModifier
+                    .background(
+                        ColorProvider(
+                            day = statusColor,
+                            night = statusColor
+                        )
+                    )
+                    .padding(
+                        horizontal = 8.dp,
+                        vertical = 3.dp
+                    ),
+                style = TextStyle(
+                    color = ColorProvider(
+                        day = Color.White,
+                        night = Color.White
+                    ),
+                    fontWeight = FontWeight.Bold
+                )
+            )
+        }
+
+        Spacer(
+            modifier = GlanceModifier.size(5.dp)
         )
 
         Text(
             text = "Проверено: $lastCheckText",
+            maxLines = 1,
             style = TextStyle(
                 color = ColorProvider(
                     day = Color.Gray,
