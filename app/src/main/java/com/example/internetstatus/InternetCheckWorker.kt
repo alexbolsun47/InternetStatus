@@ -18,31 +18,23 @@ class InternetCheckWorker(
     override suspend fun doWork(): Result =
         coroutineScope {
 
+            val settingsRepository =
+                SettingsRepository(
+                    applicationContext
+                )
+
+            val statusRepository =
+                StatusRepository(
+                    applicationContext
+                )
+
             try {
 
-                val settingsRepository =
-                    SettingsRepository(
-                        applicationContext
-                    )
-
-                val statusRepository =
-                    StatusRepository(
-                        applicationContext
-                    )
-
-                /*
-                 * Берём актуальные пользовательские
-                 * настройки из DataStore.
-                 */
                 val settings =
                     settingsRepository
                         .settings
                         .first()
 
-                /*
-                 * Wi-Fi и мобильную сеть
-                 * проверяем параллельно.
-                 */
                 val mobileDeferred =
                     async {
 
@@ -79,9 +71,6 @@ class InternetCheckWorker(
                 val wifi =
                     wifiDeferred.await()
 
-                /*
-                 * Сохраняем результат.
-                 */
                 statusRepository.saveStatus(
 
                     mobileStatus =
@@ -99,18 +88,55 @@ class InternetCheckWorker(
                     lastCheckTime =
                         System.currentTimeMillis()
                 )
+
+                /*
+                 * После успешной проверки
+                 * обязательно обновляем виджет.
+                 */
                 updateInternetStatusWidget(
                     applicationContext
                 )
+
                 Result.success()
 
             } catch (e: Exception) {
 
                 /*
-                 * Не хотим убивать периодическую задачу
-                 * из-за единичной ошибки.
+                 * Если Worker упал,
+                 * не оставляем виджет
+                 * навечно в CHECKING.
                  */
-                Result.retry()
+
+                val previous =
+                    statusRepository
+                        .status
+                        .first()
+
+                statusRepository.saveStatus(
+
+                    mobileStatus =
+                        InternetStatus.NETWORK_UNAVAILABLE,
+
+                    wifiStatus =
+                        previous.wifiStatus,
+
+                    mobileDetails =
+                        "Ошибка фоновой проверки: " +
+                                (e.message
+                                    ?: e.javaClass.simpleName),
+
+                    wifiDetails =
+                        previous.wifiDetails,
+
+                    lastCheckTime =
+                        System.currentTimeMillis()
+                )
+
+                updateInternetStatusWidget(
+                    applicationContext
+                )
+
+                Result.failure()
             }
         }
 }

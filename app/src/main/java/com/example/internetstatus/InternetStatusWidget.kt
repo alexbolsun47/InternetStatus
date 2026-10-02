@@ -71,6 +71,9 @@ private fun WidgetContent(
             InternetStatus.NO_INTERNET ->
                 Color(0xFFC62828)
 
+            InternetStatus.CHECKING ->
+                Color(0xFF757575)
+
             InternetStatus.NETWORK_UNAVAILABLE,
             InternetStatus.MOBILE_DATA_DISABLED,
             InternetStatus.WIFI_DISABLED,
@@ -80,6 +83,8 @@ private fun WidgetContent(
 
     val shortStatus =
         when (status) {
+            InternetStatus.CHECKING ->
+                "Проверяем..."
 
             InternetStatus.FULL ->
                 "Полный интернет"

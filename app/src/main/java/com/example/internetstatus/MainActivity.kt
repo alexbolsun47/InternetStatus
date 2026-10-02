@@ -83,7 +83,10 @@ enum class InternetStatus(
         "Мобильные данные выключены",
         Color(0xFF757575)
     ),
-
+    CHECKING(
+        "Проверяем...",
+        Color(0xFF757575)
+    ),
     NOT_CHECKED(
         "Не проверено",
         Color(0xFF757575)
