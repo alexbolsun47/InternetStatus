@@ -143,16 +143,23 @@ private fun WidgetContent(
                 )
             )
 
-            Text(
-                text = "↻",
+            Row(
                 modifier = GlanceModifier
                     .clickable(
                         actionRunCallback<RefreshWidgetAction>()
-                    ),
-                style = TextStyle(
-                    fontWeight = FontWeight.Bold
+                    )
+                    .padding(
+                        horizontal = 16.dp,
+                        vertical = 10.dp
+                    )
+            ) {
+                Text(
+                    text = "↻",
+                    style = TextStyle(
+                        fontWeight = FontWeight.Bold
+                    )
                 )
-            )
+            }
         }
 
         Spacer(

@@ -1,6 +1,7 @@
 package com.example.internetstatus
 
 import android.content.Context
+import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
@@ -12,6 +13,14 @@ object BackgroundCheckScheduler {
     private const val PERIODIC_WORK_NAME =
         "internet_status_periodic_check"
 
+    /*
+     * Обычная фоновая проверка
+     * каждые 15 минут.
+     *
+     * Проверяются:
+     * - мобильная сеть
+     * - Wi-Fi
+     */
     fun schedulePeriodic(
         context: Context
     ) {
@@ -28,18 +37,17 @@ object BackgroundCheckScheduler {
         WorkManager
             .getInstance(context)
             .enqueueUniquePeriodicWork(
-
                 PERIODIC_WORK_NAME,
-
                 ExistingPeriodicWorkPolicy.UPDATE,
-
                 request
             )
     }
 
     /*
-     * Эта функция понадобится нам для тестирования.
-     * Не надо ждать 15 минут.
+     * Тестовая ручная проверка
+     * через WorkManager.
+     *
+     * Проверяет обе сети.
      */
     fun runNow(
         context: Context
@@ -49,6 +57,36 @@ object BackgroundCheckScheduler {
             OneTimeWorkRequestBuilder<
                     InternetCheckWorker
                     >()
+                .build()
+
+        WorkManager
+            .getInstance(context)
+            .enqueue(request)
+    }
+
+    /*
+     * Ручное обновление из виджета.
+     *
+     * Проверяем ТОЛЬКО мобильную сеть,
+     * потому что виджет показывает именно её.
+     */
+    fun runMobileNow(
+        context: Context
+    ) {
+
+        val inputData =
+            Data.Builder()
+                .putBoolean(
+                    "mobile_only",
+                    true
+                )
+                .build()
+
+        val request =
+            OneTimeWorkRequestBuilder<
+                    InternetCheckWorker
+                    >()
+                .setInputData(inputData)
                 .build()
 
         WorkManager

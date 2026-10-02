@@ -35,6 +35,59 @@ class InternetCheckWorker(
                         .settings
                         .first()
 
+                val mobileOnly =
+                    inputData.getBoolean(
+                        "mobile_only",
+                        false
+                    )
+
+                /*
+                 * Ручное обновление виджета:
+                 * проверяем только MOBILE.
+                 */
+                if (mobileOnly) {
+
+                    val previous =
+                        statusRepository
+                            .status
+                            .first()
+
+                    val mobile =
+                        checkNetwork(
+                            context =
+                                applicationContext,
+
+                            networkType =
+                                NetworkType.MOBILE,
+
+                            settings =
+                                settings
+                        )
+
+                    statusRepository.saveStatus(
+                        mobileStatus =
+                            mobile.status,
+
+                        wifiStatus =
+                            previous.wifiStatus,
+
+                        mobileDetails =
+                            mobile.details,
+
+                        wifiDetails =
+                            previous.wifiDetails,
+
+                        lastCheckTime =
+                            System.currentTimeMillis()
+                    )
+
+                    return@coroutineScope Result.success()
+                }
+
+                /*
+                 * Обычная фоновая проверка:
+                 * MOBILE + Wi-Fi.
+                 */
                 val mobileDeferred =
                     async {
 
@@ -65,14 +118,45 @@ class InternetCheckWorker(
                         )
                     }
 
+                /*
+                 * Mobile готов первым —
+                 * сразу сохраняем.
+                 */
                 val mobile =
                     mobileDeferred.await()
 
+                val previous =
+                    statusRepository
+                        .status
+                        .first()
+
+                val checkTime =
+                    System.currentTimeMillis()
+
+                statusRepository.saveStatus(
+                    mobileStatus =
+                        mobile.status,
+
+                    wifiStatus =
+                        previous.wifiStatus,
+
+                    mobileDetails =
+                        mobile.details,
+
+                    wifiDetails =
+                        previous.wifiDetails,
+
+                    lastCheckTime =
+                        checkTime
+                )
+
+                /*
+                 * Wi-Fi завершается позже.
+                 */
                 val wifi =
                     wifiDeferred.await()
 
                 statusRepository.saveStatus(
-
                     mobileStatus =
                         mobile.status,
 
@@ -86,34 +170,22 @@ class InternetCheckWorker(
                         wifi.details,
 
                     lastCheckTime =
-                        System.currentTimeMillis()
-                )
-
-                /*
-                 * После успешной проверки
-                 * обязательно обновляем виджет.
-                 */
-                updateInternetStatusWidget(
-                    applicationContext
+                        checkTime
                 )
 
                 Result.success()
 
             } catch (e: Exception) {
 
-                /*
-                 * Если Worker упал,
-                 * не оставляем виджет
-                 * навечно в CHECKING.
-                 */
-
                 val previous =
                     statusRepository
                         .status
                         .first()
 
+                /*
+                 * Никогда не оставляем CHECKING.
+                 */
                 statusRepository.saveStatus(
-
                     mobileStatus =
                         InternetStatus.NETWORK_UNAVAILABLE,
 
@@ -122,18 +194,16 @@ class InternetCheckWorker(
 
                     mobileDetails =
                         "Ошибка фоновой проверки: " +
-                                (e.message
-                                    ?: e.javaClass.simpleName),
+                                (
+                                        e.message
+                                            ?: e.javaClass.simpleName
+                                        ),
 
                     wifiDetails =
                         previous.wifiDetails,
 
                     lastCheckTime =
                         System.currentTimeMillis()
-                )
-
-                updateInternetStatusWidget(
-                    applicationContext
                 )
 
                 Result.failure()

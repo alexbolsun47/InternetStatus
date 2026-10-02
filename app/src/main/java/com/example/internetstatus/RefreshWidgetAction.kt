@@ -14,47 +14,48 @@ class RefreshWidgetAction : ActionCallback {
         parameters: ActionParameters
     ) {
 
-        val repository =
-            StatusRepository(
-                context.applicationContext
-            )
+        val appContext =
+            context.applicationContext
 
-        val currentStatus =
-            repository.status.first()
+        val statusRepository =
+            StatusRepository(appContext)
+
+        val previous =
+            statusRepository.status.first()
 
         /*
-         * Сразу показываем на виджете,
-         * что проверка запущена.
+         * Сразу даём пользователю реакцию.
          */
-        repository.saveStatus(
+        statusRepository.saveStatus(
             mobileStatus =
                 InternetStatus.CHECKING,
 
             wifiStatus =
-                currentStatus.wifiStatus,
+                previous.wifiStatus,
 
             mobileDetails =
-                "Выполняется проверка...",
+                "Проверяем мобильную сеть...",
 
             wifiDetails =
-                currentStatus.wifiDetails,
+                previous.wifiDetails,
 
+            /*
+             * Старое время сохраняем,
+             * потому что новая проверка
+             * ещё не закончилась.
+             */
             lastCheckTime =
-                currentStatus.lastCheckTime
-        )
-
-        updateInternetStatusWidget(
-            context.applicationContext
+                previous.lastCheckTime
         )
 
         /*
-         * После этого запускаем Worker.
-         * Когда он закончит, сохранит
-         * настоящий результат и снова
-         * обновит виджет.
+         * Сеть внутри ActionCallback
+         * больше НЕ проверяем.
+         *
+         * Отдаём работу WorkManager.
          */
-        BackgroundCheckScheduler.runNow(
-            context.applicationContext
+        BackgroundCheckScheduler.runMobileNow(
+            appContext
         )
     }
 }

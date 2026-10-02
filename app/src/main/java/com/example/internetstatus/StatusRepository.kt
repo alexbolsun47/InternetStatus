@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import androidx.glance.appwidget.updateAll
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -18,10 +19,8 @@ private val Context.statusDataStore: DataStore<Preferences>
 data class SavedNetworkStatus(
     val mobileStatus: InternetStatus = InternetStatus.NOT_CHECKED,
     val wifiStatus: InternetStatus = InternetStatus.NOT_CHECKED,
-
     val mobileDetails: String = "",
     val wifiDetails: String = "",
-
     val lastCheckTime: Long = 0L
 )
 
@@ -51,7 +50,6 @@ class StatusRepository(
         context.statusDataStore.data.map { preferences ->
 
             SavedNetworkStatus(
-
                 mobileStatus =
                     parseStatus(
                         preferences[Keys.MOBILE_STATUS]
@@ -101,6 +99,15 @@ class StatusRepository(
             preferences[Keys.LAST_CHECK_TIME] =
                 lastCheckTime
         }
+
+        /*
+         * Ключевое изменение:
+         * любое изменение StatusRepository
+         * автоматически перерисовывает виджет.
+         */
+        InternetStatusWidget().updateAll(
+            context.applicationContext
+        )
     }
 
     private fun parseStatus(
