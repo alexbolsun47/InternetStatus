@@ -6,12 +6,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
-import androidx.glance.appwidget.action.actionRunCallback
+import androidx.glance.background
+import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.provideContent
 import androidx.glance.color.ColorProvider
-import androidx.glance.action.clickable
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
@@ -83,8 +84,6 @@ private fun WidgetContent(
 
     val shortStatus =
         when (status) {
-            InternetStatus.CHECKING ->
-                "Проверяем..."
 
             InternetStatus.FULL ->
                 "Полный интернет"
@@ -99,10 +98,13 @@ private fun WidgetContent(
                 "Сеть недоступна"
 
             InternetStatus.MOBILE_DATA_DISABLED ->
-                "Моб. данные выключены"
+                "Моб. данные выкл."
 
             InternetStatus.WIFI_DISABLED ->
                 "Wi-Fi выключен"
+
+            InternetStatus.CHECKING ->
+                "Проверяем..."
 
             InternetStatus.NOT_CHECKED ->
                 "Не проверено"
@@ -132,18 +134,9 @@ private fun WidgetContent(
             .padding(12.dp)
     ) {
 
-        Text(
-            text = "Мобильная сеть",
-            style = TextStyle(
-                fontWeight = FontWeight.Bold
-            )
-        )
-
-        Spacer(
-            modifier = GlanceModifier.size(6.dp)
-        )
-
-        Row {
+        Row(
+            modifier = GlanceModifier.fillMaxWidth()
+        ) {
 
             Text(
                 text = "●",
@@ -151,21 +144,56 @@ private fun WidgetContent(
                     color = ColorProvider(
                         day = statusColor,
                         night = statusColor
-                    )
+                    ),
+                    fontWeight = FontWeight.Bold
                 )
             )
 
             Spacer(
-                modifier = GlanceModifier.width(6.dp)
+                modifier = GlanceModifier.width(8.dp)
             )
 
-            Text(
-                text = shortStatus
-            )
+            Column(
+                modifier = GlanceModifier
+                    .defaultWeight()
+            ) {
 
-            Spacer(
-                modifier = GlanceModifier.width(12.dp)
-            )
+                Text(
+                    text = "Мобильная сеть",
+                    style = TextStyle(
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+
+                Spacer(
+                    modifier = GlanceModifier.size(2.dp)
+                )
+
+                androidx.glance.layout.Box(
+                    modifier = GlanceModifier
+                        .background(
+                            ColorProvider(
+                                day = statusColor,
+                                night = statusColor
+                            )
+                        )
+                        .padding(
+                            horizontal = 8.dp,
+                            vertical = 4.dp
+                        )
+                ) {
+                    Text(
+                        text = shortStatus,
+                        style = TextStyle(
+                            color = ColorProvider(
+                                day = Color.White,
+                                night = Color.White
+                            ),
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                }
+            }
 
             Text(
                 text = "↻",
@@ -182,7 +210,7 @@ private fun WidgetContent(
         }
 
         Spacer(
-            modifier = GlanceModifier.size(4.dp)
+            modifier = GlanceModifier.size(6.dp)
         )
 
         Text(
