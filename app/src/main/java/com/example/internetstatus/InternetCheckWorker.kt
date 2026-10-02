@@ -99,7 +99,9 @@ class InternetCheckWorker(
                     lastCheckTime =
                         System.currentTimeMillis()
                 )
-
+                updateInternetStatusWidget(
+                    applicationContext
+                )
                 Result.success()
 
             } catch (e: Exception) {

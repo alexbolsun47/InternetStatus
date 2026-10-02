@@ -405,7 +405,9 @@ fun HomeScreen(
                             lastCheckTime =
                                 checkTime
                         )
-
+                        updateInternetStatusWidget(
+                            context.applicationContext
+                        )
                         val formatter =
                             SimpleDateFormat(
                                 "HH:mm:ss",
