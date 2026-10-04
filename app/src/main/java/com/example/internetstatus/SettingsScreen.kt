@@ -61,268 +61,272 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(
-                    rememberScrollState()
-                )
-                .padding(20.dp)
+                .consumeWindowInsets(innerPadding)
+                .imePadding()
         ) {
-
-            Text(
-                text = "Настройки",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(
-                modifier = Modifier.height(6.dp)
-            )
-
-            Text(
-                text = "Адреса указываются по одному на строку",
-                fontSize = 14.sp
-            )
-
-            Spacer(
-                modifier = Modifier.height(28.dp)
-            )
-
-            Text(
-                text = "Полный интернет",
-                fontSize = 19.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
-
-            OutlinedTextField(
-                value = fullUrlsText,
-                onValueChange = {
-                    fullUrlsText = it
-                },
-                modifier = Modifier.fillMaxWidth(),
-                label = {
-                    Text("HTTPS-адреса")
-                },
-                placeholder = {
-                    Text(
-                        "https://www.google.com\n" +
-                                "https://www.cloudflare.com"
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .verticalScroll(
+                        rememberScrollState()
                     )
-                },
-                minLines = 3
-            )
+                    .padding(20.dp)
+            ) {
 
-            Spacer(
-                modifier = Modifier.height(12.dp)
-            )
+                Text(
+                    text = "Настройки",
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold
+                )
 
-            OutlinedTextField(
-                value = fullThresholdText,
-                onValueChange = {
-                    fullThresholdText =
-                        it.filter(Char::isDigit)
-                },
-                modifier = Modifier.fillMaxWidth(),
-                label = {
-                    Text("Минимум успешных адресов")
-                },
-                keyboardOptions =
-                    KeyboardOptions(
-                        keyboardType =
-                            KeyboardType.Number
-                    ),
-                singleLine = true
-            )
+                Spacer(
+                    modifier = Modifier.height(6.dp)
+                )
 
-            Spacer(
-                modifier = Modifier.height(28.dp)
-            )
+                Text(
+                    text = "Адреса указываются по одному на строку",
+                    fontSize = 14.sp
+                )
 
-            Text(
-                text = "Белый список",
-                fontSize = 19.sp,
-                fontWeight = FontWeight.SemiBold
-            )
+                Spacer(
+                    modifier = Modifier.height(28.dp)
+                )
 
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
+                Text(
+                    text = "Полный интернет",
+                    fontSize = 19.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
 
-            OutlinedTextField(
-                value = whitelistUrlsText,
-                onValueChange = {
-                    whitelistUrlsText = it
-                },
-                modifier = Modifier.fillMaxWidth(),
-                label = {
-                    Text("HTTPS-адреса")
-                },
-                placeholder = {
-                    Text(
-                        "https://yandex.ru\n" +
-                                "https://example.ru"
-                    )
-                },
-                minLines = 3
-            )
+                Spacer(
+                    modifier = Modifier.height(8.dp)
+                )
 
-            Spacer(
-                modifier = Modifier.height(12.dp)
-            )
-
-            OutlinedTextField(
-                value = whitelistThresholdText,
-                onValueChange = {
-                    whitelistThresholdText =
-                        it.filter(Char::isDigit)
-                },
-                modifier = Modifier.fillMaxWidth(),
-                label = {
-                    Text("Минимум успешных адресов")
-                },
-                keyboardOptions =
-                    KeyboardOptions(
-                        keyboardType =
-                            KeyboardType.Number
-                    ),
-                singleLine = true
-            )
-
-            Spacer(
-                modifier = Modifier.height(28.dp)
-            )
-
-            Text(
-                text = "Проверка",
-                fontSize = 19.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
-
-            OutlinedTextField(
-                value = timeoutText,
-                onValueChange = {
-                    timeoutText =
-                        it.filter(Char::isDigit)
-                },
-                modifier = Modifier.fillMaxWidth(),
-                label = {
-                    Text("Таймаут, мс")
-                },
-                supportingText = {
-                    Text(
-                        "Рекомендуемое значение: $DEFAULT_TIMEOUT_MS мс"
-                    )
-                },
-                keyboardOptions =
-                    KeyboardOptions(
-                        keyboardType =
-                            KeyboardType.Number
-                    ),
-                singleLine = true
-            )
-
-            Spacer(
-                modifier = Modifier.height(30.dp)
-            )
-
-            Button(
-                modifier = Modifier.fillMaxWidth(),
-
-                onClick = {
-
-                    val fullUrls =
-                        parseUrls(fullUrlsText)
-
-                    val whitelistUrls =
-                        parseUrls(
-                            whitelistUrlsText
+                OutlinedTextField(
+                    value = fullUrlsText,
+                    onValueChange = {
+                        fullUrlsText = it
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = {
+                        Text("HTTPS-адреса")
+                    },
+                    placeholder = {
+                        Text(
+                            "https://www.google.com\n" +
+                                    "https://www.cloudflare.com"
                         )
+                    },
+                    minLines = 3
+                )
 
-                    val timeout =
-                        timeoutText
-                            .toIntOrNull()
-                            ?.coerceIn(
-                                500,
-                                15000
-                            )
-                            ?: DEFAULT_TIMEOUT_MS
+                Spacer(
+                    modifier = Modifier.height(12.dp)
+                )
 
-                    val fullThreshold =
-                        fullThresholdText
-                            .toIntOrNull()
-                            ?.coerceAtLeast(1)
-                            ?: 1
+                OutlinedTextField(
+                    value = fullThresholdText,
+                    onValueChange = {
+                        fullThresholdText =
+                            it.filter(Char::isDigit)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = {
+                        Text("Минимум успешных адресов")
+                    },
+                    keyboardOptions =
+                        KeyboardOptions(
+                            keyboardType =
+                                KeyboardType.Number
+                        ),
+                    singleLine = true
+                )
 
-                    val whitelistThreshold =
-                        whitelistThresholdText
-                            .toIntOrNull()
-                            ?.coerceAtLeast(1)
-                            ?: 1
+                Spacer(
+                    modifier = Modifier.height(28.dp)
+                )
 
-                    val settings =
-                        AppSettings(
+                Text(
+                    text = "Белый список",
+                    fontSize = 19.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
 
-                            fullInternetUrls =
-                                fullUrls,
+                Spacer(
+                    modifier = Modifier.height(8.dp)
+                )
 
-                            whitelistUrls =
-                                whitelistUrls,
-
-                            timeoutMs =
-                                timeout,
-
-                            fullInternetThreshold =
-                                fullThreshold.coerceAtMost(
-                                    maxOf(
-                                        1,
-                                        fullUrls.size
-                                    )
-                                ),
-
-                            whitelistThreshold =
-                                whitelistThreshold.coerceAtMost(
-                                    maxOf(
-                                        1,
-                                        whitelistUrls.size
-                                    )
-                                )
+                OutlinedTextField(
+                    value = whitelistUrlsText,
+                    onValueChange = {
+                        whitelistUrlsText = it
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = {
+                        Text("HTTPS-адреса")
+                    },
+                    placeholder = {
+                        Text(
+                            "https://yandex.ru\n" +
+                                    "https://example.ru"
                         )
+                    },
+                    minLines = 3
+                )
 
-                    scope.launch {
+                Spacer(
+                    modifier = Modifier.height(12.dp)
+                )
 
-                        repository.saveSettings(
-                            settings
+                OutlinedTextField(
+                    value = whitelistThresholdText,
+                    onValueChange = {
+                        whitelistThresholdText =
+                            it.filter(Char::isDigit)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = {
+                        Text("Минимум успешных адресов")
+                    },
+                    keyboardOptions =
+                        KeyboardOptions(
+                            keyboardType =
+                                KeyboardType.Number
+                        ),
+                    singleLine = true
+                )
+
+                Spacer(
+                    modifier = Modifier.height(28.dp)
+                )
+
+                Text(
+                    text = "Проверка",
+                    fontSize = 19.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                Spacer(
+                    modifier = Modifier.height(8.dp)
+                )
+
+                OutlinedTextField(
+                    value = timeoutText,
+                    onValueChange = {
+                        timeoutText =
+                            it.filter(Char::isDigit)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = {
+                        Text("Таймаут, мс")
+                    },
+                    supportingText = {
+                        Text(
+                            "Рекомендуемое значение: $DEFAULT_TIMEOUT_MS мс"
                         )
+                    },
+                    keyboardOptions =
+                        KeyboardOptions(
+                            keyboardType =
+                                KeyboardType.Number
+                        ),
+                    singleLine = true
+                )
 
-                        onBack()
-                    }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedButton(
+                    modifier = Modifier.weight(1f),
+                    onClick = onBack
+                ) {
+                    Text("Отмена")
                 }
-            ) {
 
-                Text("Сохранить")
+                Button(
+                    modifier = Modifier.weight(1f),
+
+                    onClick = {
+
+                        val fullUrls =
+                            parseUrls(fullUrlsText)
+
+                        val whitelistUrls =
+                            parseUrls(
+                                whitelistUrlsText
+                            )
+
+                        val timeout =
+                            timeoutText
+                                .toIntOrNull()
+                                ?.coerceIn(
+                                    500,
+                                    15000
+                                )
+                                ?: DEFAULT_TIMEOUT_MS
+
+                        val fullThreshold =
+                            fullThresholdText
+                                .toIntOrNull()
+                                ?.coerceAtLeast(1)
+                                ?: 1
+
+                        val whitelistThreshold =
+                            whitelistThresholdText
+                                .toIntOrNull()
+                                ?.coerceAtLeast(1)
+                                ?: 1
+
+                        val settings =
+                            AppSettings(
+
+                                fullInternetUrls =
+                                    fullUrls,
+
+                                whitelistUrls =
+                                    whitelistUrls,
+
+                                timeoutMs =
+                                    timeout,
+
+                                fullInternetThreshold =
+                                    fullThreshold.coerceAtMost(
+                                        maxOf(
+                                            1,
+                                            fullUrls.size
+                                        )
+                                    ),
+
+                                whitelistThreshold =
+                                    whitelistThreshold.coerceAtMost(
+                                        maxOf(
+                                            1,
+                                            whitelistUrls.size
+                                        )
+                                    )
+                            )
+
+                        scope.launch {
+
+                            repository.saveSettings(
+                                settings
+                            )
+
+                            onBack()
+                        }
+                    }
+                ) {
+
+                    Text("Сохранить")
+                }
+
             }
-
-            Spacer(
-                modifier = Modifier.height(12.dp)
-            )
-
-            OutlinedButton(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = onBack
-            ) {
-
-                Text("Отмена")
-            }
-
-            Spacer(
-                modifier = Modifier.height(30.dp)
-            )
         }
     }
 }
