@@ -1,6 +1,7 @@
 package com.example.internetstatus
 
 import android.content.Context
+import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -8,6 +9,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.glance.appwidget.updateAll
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -75,29 +77,21 @@ class StatusRepository(
         }
 
     suspend fun saveStatus(
-        mobileStatus: InternetStatus,
-        wifiStatus: InternetStatus,
-        mobileDetails: String,
-        wifiDetails: String,
-        lastCheckTime: Long
+        mobileStatus: InternetStatus? = null,
+        wifiStatus: InternetStatus? = null,
+        mobileDetails: String? = null,
+        wifiDetails: String? = null,
+        lastCheckTime: Long? = null
     ) {
 
         context.statusDataStore.edit { preferences ->
 
-            preferences[Keys.MOBILE_STATUS] =
-                mobileStatus.name
-
-            preferences[Keys.WIFI_STATUS] =
-                wifiStatus.name
-
-            preferences[Keys.MOBILE_DETAILS] =
-                mobileDetails
-
-            preferences[Keys.WIFI_DETAILS] =
-                wifiDetails
-
-            preferences[Keys.LAST_CHECK_TIME] =
-                lastCheckTime
+            // Update only the supplied transport; keep the other one's latest result.
+            mobileStatus?.let { preferences[Keys.MOBILE_STATUS] = it.name }
+            wifiStatus?.let { preferences[Keys.WIFI_STATUS] = it.name }
+            mobileDetails?.let { preferences[Keys.MOBILE_DETAILS] = it }
+            wifiDetails?.let { preferences[Keys.WIFI_DETAILS] = it }
+            lastCheckTime?.let { preferences[Keys.LAST_CHECK_TIME] = it }
         }
 
         /*
@@ -105,9 +99,29 @@ class StatusRepository(
          * любое изменение StatusRepository
          * автоматически перерисовывает виджет.
          */
-        InternetStatusWidget().updateAll(
-            context.applicationContext
-        )
+        updateWidget()
+    }
+
+    suspend fun finishChecking(details: String) {
+        context.statusDataStore.edit { preferences ->
+            // Do not replace a completed result if another check has already finished.
+            if (preferences[Keys.MOBILE_STATUS] == InternetStatus.CHECKING.name) {
+                preferences[Keys.MOBILE_STATUS] = InternetStatus.NETWORK_UNAVAILABLE.name
+                preferences[Keys.MOBILE_DETAILS] = details
+            }
+        }
+        updateWidget()
+    }
+
+    private suspend fun updateWidget() {
+        try {
+            InternetStatusWidget().updateAll(context.applicationContext)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // The saved result remains valid even when Glance cannot render it.
+            Log.w("StatusRepository", "Не удалось обновить виджет", e)
+        }
     }
 
     private fun parseStatus(

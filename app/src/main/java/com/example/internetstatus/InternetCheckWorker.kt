@@ -1,212 +1,62 @@
 package com.example.internetstatus
 
 import android.content.Context
+import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 
 class InternetCheckWorker(
     appContext: Context,
     workerParams: WorkerParameters
-) : CoroutineWorker(
-    appContext,
-    workerParams
-) {
+) : CoroutineWorker(appContext, workerParams) {
 
-    override suspend fun doWork(): Result =
-        coroutineScope {
+    override suspend fun doWork(): Result {
+        val settingsRepository = SettingsRepository(applicationContext)
+        val statusRepository = StatusRepository(applicationContext)
 
-            val settingsRepository =
-                SettingsRepository(
-                    applicationContext
-                )
-
-            val statusRepository =
-                StatusRepository(
-                    applicationContext
-                )
-
-            try {
-
-                val settings =
-                    settingsRepository
-                        .settings
-                        .first()
-
-                val mobileOnly =
-                    inputData.getBoolean(
-                        "mobile_only",
-                        false
-                    )
-
-                /*
-                 * Ручное обновление виджета:
-                 * проверяем только MOBILE.
-                 */
-                if (mobileOnly) {
-
-                    val previous =
-                        statusRepository
-                            .status
-                            .first()
-
-                    val mobile =
-                        checkNetwork(
-                            context =
-                                applicationContext,
-
-                            networkType =
-                                NetworkType.MOBILE,
-
-                            settings =
-                                settings
+        return try {
+            val settings = settingsRepository.settings.first()
+            runNetworkChecks(
+                mobileOnly = inputData.getBoolean("mobile_only", false),
+                check = { type -> checkNetwork(applicationContext, type, settings) },
+                onResult = { type, result ->
+                    when (type) {
+                        NetworkType.MOBILE -> statusRepository.saveStatus(
+                            mobileStatus = result.status,
+                            mobileDetails = result.details,
+                            lastCheckTime = System.currentTimeMillis()
                         )
-
-                    statusRepository.saveStatus(
-                        mobileStatus =
-                            mobile.status,
-
-                        wifiStatus =
-                            previous.wifiStatus,
-
-                        mobileDetails =
-                            mobile.details,
-
-                        wifiDetails =
-                            previous.wifiDetails,
-
-                        lastCheckTime =
-                            System.currentTimeMillis()
-                    )
-
-                    return@coroutineScope Result.success()
+                        NetworkType.WIFI -> statusRepository.saveStatus(
+                            wifiStatus = result.status,
+                            wifiDetails = result.details
+                        )
+                    }
                 }
+            )
+            Result.success()
+        } catch (e: CancellationException) {
+            finishChecking(statusRepository, "Проверка отменена.")
+            throw e
+        } catch (e: Exception) {
+            finishChecking(
+                statusRepository,
+                "Ошибка фоновой проверки: ${e.message ?: e.javaClass.simpleName}"
+            )
+            Result.failure()
+        }
+    }
 
-                /*
-                 * Обычная фоновая проверка:
-                 * MOBILE + Wi-Fi.
-                 */
-                val mobileDeferred =
-                    async {
-
-                        checkNetwork(
-                            context =
-                                applicationContext,
-
-                            networkType =
-                                NetworkType.MOBILE,
-
-                            settings =
-                                settings
-                        )
-                    }
-
-                val wifiDeferred =
-                    async {
-
-                        checkNetwork(
-                            context =
-                                applicationContext,
-
-                            networkType =
-                                NetworkType.WIFI,
-
-                            settings =
-                                settings
-                        )
-                    }
-
-                /*
-                 * Mobile готов первым —
-                 * сразу сохраняем.
-                 */
-                val mobile =
-                    mobileDeferred.await()
-
-                val previous =
-                    statusRepository
-                        .status
-                        .first()
-
-                val checkTime =
-                    System.currentTimeMillis()
-
-                statusRepository.saveStatus(
-                    mobileStatus =
-                        mobile.status,
-
-                    wifiStatus =
-                        previous.wifiStatus,
-
-                    mobileDetails =
-                        mobile.details,
-
-                    wifiDetails =
-                        previous.wifiDetails,
-
-                    lastCheckTime =
-                        checkTime
-                )
-
-                /*
-                 * Wi-Fi завершается позже.
-                 */
-                val wifi =
-                    wifiDeferred.await()
-
-                statusRepository.saveStatus(
-                    mobileStatus =
-                        mobile.status,
-
-                    wifiStatus =
-                        wifi.status,
-
-                    mobileDetails =
-                        mobile.details,
-
-                    wifiDetails =
-                        wifi.details,
-
-                    lastCheckTime =
-                        checkTime
-                )
-
-                Result.success()
-
+    private suspend fun finishChecking(repository: StatusRepository, details: String) {
+        withContext(NonCancellable) {
+            try {
+                repository.finishChecking(details)
             } catch (e: Exception) {
-
-                val previous =
-                    statusRepository
-                        .status
-                        .first()
-
-                /*
-                 * Никогда не оставляем CHECKING.
-                 */
-                statusRepository.saveStatus(
-                    mobileStatus =
-                        InternetStatus.NETWORK_UNAVAILABLE,
-
-                    wifiStatus =
-                        previous.wifiStatus,
-
-                    mobileDetails =
-                        "Ошибка фоновой проверки: " +
-                                (
-                                        e.message
-                                            ?: e.javaClass.simpleName
-                                        ),
-
-                    wifiDetails =
-                        previous.wifiDetails,
-
-                    lastCheckTime =
-                        System.currentTimeMillis()
-                )
-
-                Result.failure()
+                Log.e("InternetCheckWorker", "Не удалось сохранить ошибку проверки", e)
             }
         }
+    }
 }

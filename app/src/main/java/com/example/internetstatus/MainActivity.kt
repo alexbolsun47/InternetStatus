@@ -18,7 +18,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.async
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -204,22 +204,12 @@ fun HomeScreen(
     }
 
     LaunchedEffect(savedStatus) {
+        mobileStatus = savedStatus.mobileStatus
+        wifiStatus = savedStatus.wifiStatus
+        mobileDetails = savedStatus.mobileDetails
+        wifiDetails = savedStatus.wifiDetails
 
-        if (
-            savedStatus.lastCheckTime > 0L
-        ) {
-
-            mobileStatus =
-                savedStatus.mobileStatus
-
-            wifiStatus =
-                savedStatus.wifiStatus
-
-            mobileDetails =
-                savedStatus.mobileDetails
-
-            wifiDetails =
-                savedStatus.wifiDetails
+        if (savedStatus.lastCheckTime > 0L) {
 
             val formatter =
                 SimpleDateFormat(
@@ -340,89 +330,44 @@ fun HomeScreen(
                         "Выполняется проверка..."
 
                     scope.launch {
-
-                        val mobileDeferred =
-                            async {
-
-                                checkNetwork(
-                                    context =
-                                        context,
-
-                                    networkType =
-                                        NetworkType.MOBILE,
-
-                                    settings =
-                                        settings
-                                )
-                            }
-
-                        val wifiDeferred =
-                            async {
-
-                                checkNetwork(
-                                    context =
-                                        context,
-
-                                    networkType =
-                                        NetworkType.WIFI,
-
-                                    settings =
-                                        settings
-                                )
-                            }
-
-                        val mobileResult =
-                            mobileDeferred.await()
-
-                        val wifiResult =
-                            wifiDeferred.await()
-
-                        mobileStatus =
-                            mobileResult.status
-
-                        mobileDetails =
-                            mobileResult.details
-
-                        wifiStatus =
-                            wifiResult.status
-
-                        wifiDetails =
-                            wifiResult.details
-
-                        val checkTime =
-                            System.currentTimeMillis()
-
-                        statusRepository.saveStatus(
-                            mobileStatus =
-                                mobileResult.status,
-
-                            wifiStatus =
-                                wifiResult.status,
-
-                            mobileDetails =
-                                mobileResult.details,
-
-                            wifiDetails =
-                                wifiResult.details,
-
-                            lastCheckTime =
-                                checkTime
-                        )
-                        updateInternetStatusWidget(
-                            context.applicationContext
-                        )
-                        val formatter =
-                            SimpleDateFormat(
-                                "HH:mm:ss",
-                                Locale.getDefault()
+                        val checkSettings = settings
+                        try {
+                            runNetworkChecks(
+                                check = { type ->
+                                    checkNetwork(context, type, checkSettings)
+                                },
+                                onResult = { type, result ->
+                                    when (type) {
+                                        NetworkType.MOBILE -> {
+                                            mobileStatus = result.status
+                                            mobileDetails = result.details
+                                            statusRepository.saveStatus(
+                                                mobileStatus = result.status,
+                                                mobileDetails = result.details,
+                                                lastCheckTime = System.currentTimeMillis()
+                                            )
+                                        }
+                                        NetworkType.WIFI -> {
+                                            wifiStatus = result.status
+                                            wifiDetails = result.details
+                                            statusRepository.saveStatus(
+                                                wifiStatus = result.status,
+                                                wifiDetails = result.details
+                                            )
+                                        }
+                                    }
+                                }
                             )
-
-                        lastCheck =
-                            formatter.format(
-                                Date(checkTime)
-                            )
-
-                        checking = false
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            val error = "Не удалось сохранить результат: " +
+                                (e.message ?: e.javaClass.simpleName)
+                            mobileDetails = error
+                            wifiDetails = error
+                        } finally {
+                            checking = false
+                        }
                     }
                 }
             ) {
@@ -584,26 +529,6 @@ suspend fun checkNetwork(
                 }
 
                 NetworkType.MOBILE -> {
-
-                    val telephonyManager =
-                        context.getSystemService(Context.TELEPHONY_SERVICE)
-                                as android.telephony.TelephonyManager
-
-                    val mobileDataEnabled =
-                        try {
-                            telephonyManager.isDataEnabled
-                        } catch (_: Exception) {
-                            true
-                        }
-
-                    if (!mobileDataEnabled) {
-
-                        return@coroutineScope NetworkCheckSummary(
-                            status = InternetStatus.MOBILE_DATA_DISABLED,
-                            details = "Мобильные данные на устройстве выключены."
-                        )
-                    }
-
                     return@coroutineScope NetworkCheckSummary(
                         status = InternetStatus.NETWORK_UNAVAILABLE,
                         details = "Мобильная сеть недоступна."

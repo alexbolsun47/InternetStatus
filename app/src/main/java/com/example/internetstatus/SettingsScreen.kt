@@ -216,7 +216,7 @@ fun SettingsScreen(
                 },
                 supportingText = {
                     Text(
-                        "Рекомендуемое значение: 3000 мс"
+                        "Рекомендуемое значение: $DEFAULT_TIMEOUT_MS мс"
                     )
                 },
                 keyboardOptions =
@@ -251,7 +251,7 @@ fun SettingsScreen(
                                 500,
                                 15000
                             )
-                            ?: 3000
+                            ?: DEFAULT_TIMEOUT_MS
 
                     val fullThreshold =
                         fullThresholdText

@@ -2,6 +2,8 @@ package com.example.internetstatus
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
@@ -42,8 +44,9 @@ class InternetStatusWidget : GlanceAppWidget() {
             repository.status.first()
 
         provideContent {
+            val currentStatus by repository.status.collectAsState(initial = savedStatus)
             WidgetContent(
-                savedStatus = savedStatus
+                savedStatus = currentStatus
             )
         }
     }

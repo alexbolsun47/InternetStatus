@@ -1,6 +1,7 @@
 package com.example.internetstatus
 
 import android.net.Network
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
@@ -19,7 +20,7 @@ object NetworkChecker {
     suspend fun checkUrl(
         network: Network,
         url: String,
-        timeoutMs: Int = 3000
+        timeoutMs: Int = DEFAULT_TIMEOUT_MS
     ): CheckResult = withContext(Dispatchers.IO) {
 
         val startTime =
@@ -76,6 +77,8 @@ object NetworkChecker {
                 error = null
             )
 
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
 
             val responseTime =

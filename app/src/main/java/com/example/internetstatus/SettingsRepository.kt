@@ -14,6 +14,8 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
     name = "internet_status_settings"
 )
 
+const val DEFAULT_TIMEOUT_MS = 2000
+
 data class AppSettings(
 
     val fullInternetUrls: List<String> = listOf(
@@ -24,7 +26,7 @@ data class AppSettings(
         "https://yandex.ru"
     ),
 
-    val timeoutMs: Int = 3000,
+    val timeoutMs: Int = DEFAULT_TIMEOUT_MS,
 
     val fullInternetThreshold: Int = 1,
 
@@ -76,7 +78,7 @@ class SettingsRepository(
 
                 timeoutMs =
                     preferences[Keys.TIMEOUT]
-                        ?: 3000,
+                        ?: DEFAULT_TIMEOUT_MS,
 
                 fullInternetThreshold =
                     preferences[Keys.FULL_THRESHOLD]

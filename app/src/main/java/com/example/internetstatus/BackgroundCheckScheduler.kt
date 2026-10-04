@@ -6,6 +6,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import androidx.work.await
 import java.util.concurrent.TimeUnit
 
 object BackgroundCheckScheduler {
@@ -70,7 +71,7 @@ object BackgroundCheckScheduler {
      * Проверяем ТОЛЬКО мобильную сеть,
      * потому что виджет показывает именно её.
      */
-    fun runMobileNow(
+    suspend fun runMobileNow(
         context: Context
     ) {
 
@@ -92,5 +93,6 @@ object BackgroundCheckScheduler {
         WorkManager
             .getInstance(context)
             .enqueue(request)
+            .await()
     }
 }
