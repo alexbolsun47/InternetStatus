@@ -22,10 +22,7 @@ class RefreshWidgetAction : ActionCallback {
         // Only storage and enqueueing happen here; network checks remain in the Worker.
         withContext(NonCancellable) {
             try {
-                repository.saveStatus(
-                    mobileStatus = InternetStatus.CHECKING,
-                    mobileDetails = "Проверяем мобильную сеть..."
-                )
+                if (!repository.tryStartMobileCheck()) return@withContext
                 BackgroundCheckScheduler.runMobileNow(appContext)
             } catch (e: Exception) {
                 Log.e("RefreshWidgetAction", "Не удалось запустить проверку", e)

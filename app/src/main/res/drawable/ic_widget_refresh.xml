@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Signal bars echo the launcher icon; the surrounding arrow denotes refresh. -->
+    <path
+        android:fillColor="#F1F6FF"
+        android:pathData="M7.5,12.5Q6.3,12.5 6.3,13.7V17.8Q6.3,19 7.5,19Q8.7,19 8.7,17.8V13.7Q8.7,12.5 7.5,12.5Z M12,9.3Q10.8,9.3 10.8,10.5V17.8Q10.8,19 12,19Q13.2,19 13.2,17.8V10.5Q13.2,9.3 12,9.3Z M16.5,6.5Q15.3,6.5 15.3,7.7V17.8Q15.3,19 16.5,19Q17.7,19 17.7,17.8V7.7Q17.7,6.5 16.5,6.5Z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#63DDD9"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M20.5,17.5C22.8,12.8 21.5,6.5 17,3.8C11.8,0.7 5.2,3.5 3.3,8.8 M2.8,4.7L3.3,8.8L7.3,7.8" />
+</vector>

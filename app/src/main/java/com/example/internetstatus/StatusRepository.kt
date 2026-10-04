@@ -102,6 +102,20 @@ class StatusRepository(
         updateWidget()
     }
 
+    suspend fun tryStartMobileCheck(): Boolean {
+        var started = false
+        context.statusDataStore.edit { preferences ->
+            // Claim the check atomically, including taps received before the widget redraws.
+            if (preferences[Keys.MOBILE_STATUS] != InternetStatus.CHECKING.name) {
+                preferences[Keys.MOBILE_STATUS] = InternetStatus.CHECKING.name
+                preferences[Keys.MOBILE_DETAILS] = "Проверяем мобильную сеть..."
+                started = true
+            }
+        }
+        if (started) updateWidget()
+        return started
+    }
+
     suspend fun finishChecking(details: String) {
         context.statusDataStore.edit { preferences ->
             // Do not replace a completed result if another check has already finished.

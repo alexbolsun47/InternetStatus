@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">InternetStatus</string>
+    <string name="widget_refresh">Обновить статус мобильной сети</string>
+    <string name="widget_refresh_checking">Проверяем мобильную сеть</string>
 </resources>

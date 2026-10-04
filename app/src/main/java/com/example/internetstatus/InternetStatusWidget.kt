@@ -8,19 +8,27 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.Image
+import androidx.glance.ImageProvider
+import androidx.glance.LocalContext
 import androidx.glance.action.clickable
+import androidx.glance.appwidget.CircularProgressIndicator
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.color.ColorProvider
+import androidx.glance.layout.Alignment
+import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
+import androidx.glance.semantics.contentDescription
+import androidx.glance.semantics.semantics
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
@@ -134,7 +142,8 @@ private fun WidgetContent(
 
         // Верхняя строка: название + обновление
         Row(
-            modifier = GlanceModifier.fillMaxWidth()
+            modifier = GlanceModifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
 
             Text(
@@ -146,23 +155,7 @@ private fun WidgetContent(
                 )
             )
 
-            Row(
-                modifier = GlanceModifier
-                    .clickable(
-                        actionRunCallback<RefreshWidgetAction>()
-                    )
-                    .padding(
-                        horizontal = 16.dp,
-                        vertical = 10.dp
-                    )
-            ) {
-                Text(
-                    text = "↻",
-                    style = TextStyle(
-                        fontWeight = FontWeight.Bold
-                    )
-                )
-            }
+            WidgetRefreshButton(checking = status == InternetStatus.CHECKING)
         }
 
         Spacer(
@@ -210,6 +203,54 @@ private fun WidgetContent(
                 )
             )
         )
+    }
+}
+
+@Composable
+private fun WidgetRefreshButton(checking: Boolean) {
+    val context = LocalContext.current
+    val buttonDescription = context.getString(
+        if (checking) R.string.widget_refresh_checking else R.string.widget_refresh
+    )
+    val clickModifier = if (checking) {
+        GlanceModifier
+    } else {
+        GlanceModifier.clickable(
+            onClick = actionRunCallback<RefreshWidgetAction>(),
+            rippleOverride = R.drawable.widget_refresh_ripple
+        )
+    }
+
+    // The visible button is 40 dp; keep the larger touch target around it.
+    Box(
+        modifier = GlanceModifier
+            .size(48.dp)
+            .then(clickModifier)
+            .semantics { contentDescription = buttonDescription },
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = GlanceModifier
+                .size(40.dp)
+                .background(ImageProvider(R.drawable.widget_refresh_background)),
+            contentAlignment = Alignment.Center
+        ) {
+            if (checking) {
+                CircularProgressIndicator(
+                    modifier = GlanceModifier.size(20.dp),
+                    color = ColorProvider(
+                        day = Color(0xFF63DDD9),
+                        night = Color(0xFF63DDD9)
+                    )
+                )
+            } else {
+                Image(
+                    provider = ImageProvider(R.drawable.ic_widget_refresh),
+                    contentDescription = null,
+                    modifier = GlanceModifier.size(26.dp)
+                )
+            }
+        }
     }
 }
 
