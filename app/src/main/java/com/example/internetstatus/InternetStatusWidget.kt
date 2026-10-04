@@ -6,6 +6,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.glance.ColorFilter
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
@@ -159,7 +160,7 @@ private fun WidgetContent(
         }
 
         Spacer(
-            modifier = GlanceModifier.size(5.dp)
+            modifier = GlanceModifier.size(1.dp)
         )
 
         // Цветная плашка статуса
@@ -170,9 +171,12 @@ private fun WidgetContent(
                 maxLines = 1,
                 modifier = GlanceModifier
                     .background(
-                        ColorProvider(
-                            day = statusColor,
-                            night = statusColor
+                        imageProvider = ImageProvider(R.drawable.widget_status_background),
+                        colorFilter = ColorFilter.tint(
+                            ColorProvider(
+                                day = statusColor,
+                                night = statusColor
+                            )
                         )
                     )
                     .padding(
@@ -190,7 +194,7 @@ private fun WidgetContent(
         }
 
         Spacer(
-            modifier = GlanceModifier.size(5.dp)
+            modifier = GlanceModifier.size(9.dp)
         )
 
         Text(
