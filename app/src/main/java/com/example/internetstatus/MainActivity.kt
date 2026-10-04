@@ -1,23 +1,33 @@
 package com.example.internetstatus
 
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
 import android.net.Network
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -203,6 +213,45 @@ fun HomeScreen(
         mutableStateOf(false)
     }
 
+    var showWidgetInstructions by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    val widgetManager = remember(context) { AppWidgetManager.getInstance(context) }
+    val widgetProvider = remember(context) {
+        ComponentName(context, InternetStatusWidgetReceiver::class.java)
+    }
+    var widgetAlreadyAdded by remember { mutableStateOf(false) }
+    var widgetPinRequested by rememberSaveable { mutableStateOf(false) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val windowHasFocus = LocalWindowInfo.current.isWindowFocused
+
+    fun refreshWidgetPresence() {
+        try {
+            widgetAlreadyAdded = widgetManager.getAppWidgetIds(widgetProvider).isNotEmpty()
+        } catch (e: RuntimeException) {
+            Log.w("InternetStatus", "Не удалось проверить наличие виджета", e)
+        }
+        widgetPinRequested = false
+    }
+
+    DisposableEffect(lifecycleOwner, widgetManager, widgetProvider) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                refreshWidgetPresence()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    // Some launchers show a dialog without pausing the Activity. Recheck on focus return too.
+    LaunchedEffect(windowHasFocus) {
+        if (windowHasFocus) {
+            refreshWidgetPresence()
+        }
+    }
+
     LaunchedEffect(savedStatus) {
         mobileStatus = savedStatus.mobileStatus
         wifiStatus = savedStatus.wifiStatus
@@ -234,6 +283,7 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
 
@@ -405,13 +455,38 @@ fun HomeScreen(
 
             OutlinedButton(
                 modifier = Modifier.fillMaxWidth(),
-                onClick = {
-                    BackgroundCheckScheduler.runNow(
-                        context.applicationContext
-                    )
+                enabled = !widgetAlreadyAdded && !widgetPinRequested,
+                onClick = addWidget@{
+                    if (widgetPinRequested) return@addWidget
+                    val requestAccepted = try {
+                        // Query Android again: the widget may have been added since the last resume.
+                        widgetAlreadyAdded =
+                            widgetManager.getAppWidgetIds(widgetProvider).isNotEmpty()
+                        if (widgetAlreadyAdded) return@addWidget
+
+                        widgetPinRequested = true
+                        widgetManager.isRequestPinAppWidgetSupported &&
+                            widgetManager.requestPinAppWidget(
+                                widgetProvider,
+                                null,
+                                null
+                            )
+                    } catch (e: RuntimeException) {
+                        Log.w("InternetStatus", "Не удалось запросить добавление виджета", e)
+                        false
+                    }
+                    // Acceptance only means the request was sent; the user can still cancel.
+                    widgetPinRequested = requestAccepted
+                    showWidgetInstructions = !requestAccepted
                 }
             ) {
-                Text("Тест фоновой проверки")
+                Text(
+                    when {
+                        widgetAlreadyAdded -> "Виджет уже добавлен"
+                        widgetPinRequested -> "Ожидание добавления виджета…"
+                        else -> "Добавить виджет на главный экран"
+                    }
+                )
             }
 
             Spacer(
@@ -484,6 +559,27 @@ fun HomeScreen(
                 details = wifiDetails
             )
         }
+    }
+
+    if (showWidgetInstructions) {
+        AlertDialog(
+            onDismissRequest = { showWidgetInstructions = false },
+            title = { Text("Добавление виджета") },
+            text = {
+                Text(
+                    "Не удалось открыть окно добавления виджета. " +
+                        "Добавьте его вручную:\n\n" +
+                        "1. Нажмите и удерживайте свободное место на главном экране.\n" +
+                        "2. Откройте «Виджеты».\n" +
+                        "3. Найдите InternetStatus и добавьте виджет на экран."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showWidgetInstructions = false }) {
+                    Text("Понятно")
+                }
+            }
+        )
     }
 }
 
